@@ -224,6 +224,7 @@ body {
 .subject-tag.japanese { background: #fce4ec; color: #ad1457; }
 .subject-tag.science { background: #e8f5e9; color: #2e7d32; }
 .subject-tag.social { background: #f3e5f5; color: #6a1b9a; }
+.subject-tag.eiken { background: #e0f2f1; color: #00695c; }
 
 .student-card .edit-btn {
   position: absolute;
@@ -496,6 +497,14 @@ body {
 
 .checkbox-label.checked { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
 .checkbox-label input { display: none; }
+
+.custom-subject-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.custom-subject-row .form-input { flex: 1; }
 
 /* ========== Eval ========== */
 .eval-section { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-light); }

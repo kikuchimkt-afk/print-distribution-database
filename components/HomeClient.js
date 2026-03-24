@@ -7,7 +7,7 @@ import AddStudentModal from '@/components/AddStudentModal';
 import EditStudentModal from '@/components/EditStudentModal';
 import Toast from '@/components/Toast';
 
-const SUBJECT_CLASS = { '数学': 'math', '英語': 'english', '国語': 'japanese', '理科': 'science', '社会': 'social' };
+const SUBJECT_CLASS = { '数学': 'math', '英語': 'english', '国語': 'japanese', '理科': 'science', '社会': 'social', '英検': 'eiken' };
 
 export default function HomeClient() {
   const [students, setStudents] = useState([]);

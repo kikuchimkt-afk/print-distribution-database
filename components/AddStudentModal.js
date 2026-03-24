@@ -3,19 +3,33 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-const ALL_SUBJECTS = ['数学', '英語', '国語', '理科', '社会'];
+const DEFAULT_SUBJECTS = ['数学', '英語', '国語', '理科', '社会', '英検'];
 const GRADES = ['小5', '小6', '中1', '中2', '中3', '高1', '高2', '高3'];
 
 export default function AddStudentModal({ onClose, onSaved }) {
   const [name, setName] = useState('');
   const [grade, setGrade] = useState('中1');
   const [subjects, setSubjects] = useState(['数学', '英語']);
+  const [customSubject, setCustomSubject] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const allSubjects = [...new Set([...DEFAULT_SUBJECTS, ...subjects])];
 
   function toggleSubject(subj) {
     setSubjects(prev =>
       prev.includes(subj) ? prev.filter(s => s !== subj) : [...prev, subj]
     );
+  }
+
+  function addCustomSubject() {
+    const trimmed = customSubject.trim();
+    if (!trimmed || subjects.includes(trimmed)) return;
+    setSubjects(prev => [...prev, trimmed]);
+    setCustomSubject('');
+  }
+
+  function handleCustomKeyDown(e) {
+    if (e.key === 'Enter') { e.preventDefault(); addCustomSubject(); }
   }
 
   async function handleSave() {
@@ -61,7 +75,7 @@ export default function AddStudentModal({ onClose, onSaved }) {
           <div className="form-group">
             <label className="form-label">教科</label>
             <div className="checkbox-group">
-              {ALL_SUBJECTS.map(subj => (
+              {allSubjects.map(subj => (
                 <label
                   key={subj}
                   className={`checkbox-label ${subjects.includes(subj) ? 'checked' : ''}`}
@@ -74,6 +88,17 @@ export default function AddStudentModal({ onClose, onSaved }) {
                   {subj}
                 </label>
               ))}
+            </div>
+            <div className="custom-subject-row">
+              <input
+                className="form-input"
+                type="text"
+                placeholder="教科を追加…"
+                value={customSubject}
+                onChange={e => setCustomSubject(e.target.value)}
+                onKeyDown={handleCustomKeyDown}
+              />
+              <button className="btn btn-secondary btn-sm" onClick={addCustomSubject} disabled={!customSubject.trim()}>＋</button>
             </div>
           </div>
         </div>
