@@ -18,7 +18,19 @@ export default function HomeClient() {
   const [editStudent, setEditStudent] = useState(null);
   const [toast, setToast] = useState('');
 
-  useEffect(() => { fetchStudents(); }, []);
+  useEffect(() => {
+    fetchStudents();
+
+    // ① リアルタイム同期
+    const channel = supabase
+      .channel('students-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
+        fetchStudents();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   async function fetchStudents() {
     setLoading(true);
@@ -71,6 +83,9 @@ export default function HomeClient() {
     <>
       <nav className="breadcrumb">
         <span>生徒一覧</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <Link href="/dashboard" className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>📊 ダッシュボード</Link>
+        </div>
       </nav>
 
       <div className="main-content">

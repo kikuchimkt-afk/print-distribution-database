@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import SlotModal from '@/components/SlotModal';
+import BatchModal from '@/components/BatchModal';
 import Toast from '@/components/Toast';
 
 const AVATAR_COLORS = ['#2d6a4f','#3a7bd5','#e07a3a','#ad1457','#6a1b9a','#b5651d','#2e7d32','#c62828'];
@@ -18,6 +19,8 @@ export default function StudentClient() {
   const [slots, setSlots] = useState([]);
   const [activeSubject, setActiveSubject] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [showBatch, setShowBatch] = useState(false);
+  const [fileSearch, setFileSearch] = useState('');
   const [toast, setToast] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -53,6 +56,21 @@ export default function StudentClient() {
   useEffect(() => { fetchStudent(); }, [fetchStudent]);
   useEffect(() => { fetchSlots(); }, [fetchSlots]);
 
+  // ① リアルタイム同期
+  useEffect(() => {
+    const channel = supabase
+      .channel(`slots-${studentId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'slots', filter: `student_id=eq.${studentId}` }, () => {
+        fetchSlots();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'files' }, () => {
+        fetchSlots();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [studentId, fetchSlots]);
+
   function getSlotData(slotNum) {
     return slots.find(s => s.slot_number === slotNum);
   }
@@ -78,6 +96,20 @@ export default function StudentClient() {
     }
   }
 
+  // ④ ファイル検索フィルター
+  function matchesSearch(slot) {
+    if (!fileSearch) return true;
+    const q = fileSearch.toLowerCase();
+    if (slot?.upload_comment?.toLowerCase().includes(q)) return true;
+    if (slot?.files?.some(f => f.file_name.toLowerCase().includes(q))) return true;
+    return false;
+  }
+
+  // ⑥ 印刷
+  function handlePrint() {
+    window.print();
+  }
+
   if (loading) return <div className="main-content"><div className="loading"><div className="spinner"></div></div></div>;
   if (!student) return <div className="main-content"><p>生徒が見つかりません</p></div>;
 
@@ -89,6 +121,10 @@ export default function StudentClient() {
         <Link href="/">生徒一覧</Link>
         <span className="sep">›</span>
         <span>{student.name}</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <button className="btn btn-secondary btn-sm" onClick={handlePrint}>🖨️ 印刷</button>
+          <button className="btn btn-secondary btn-sm" onClick={() => setShowBatch(true)}>📋 一括配布</button>
+        </div>
       </nav>
 
       <div className="main-content">
@@ -114,11 +150,28 @@ export default function StudentClient() {
           ))}
         </div>
 
+        {/* ④ ファイル検索 */}
+        <div className="controls-bar" style={{ marginBottom: 14 }}>
+          <div className="search-box">
+            <span className="search-icon">⌕</span>
+            <input
+              type="text"
+              placeholder="ファイル名・コメントで検索…"
+              value={fileSearch}
+              onChange={e => setFileSearch(e.target.value)}
+            />
+          </div>
+        </div>
+
         <div className="slot-grid">
           {Array.from({ length: SLOTS_PER_SUBJECT }, (_, i) => i + 1).map(num => {
             const slot = getSlotData(num);
             const status = slot?.status || 'empty';
             const fileCount = slot?.files?.length || 0;
+
+            // ④ 検索でマッチしないスロットは非表示
+            if (fileSearch && status !== 'empty' && !matchesSearch(slot)) return null;
+            if (fileSearch && status === 'empty') return null;
 
             return (
               <div
@@ -173,6 +226,15 @@ export default function StudentClient() {
           droppedFiles={typeof selectedSlot === 'object' ? selectedSlot.droppedFiles : null}
           onClose={() => setSelectedSlot(null)}
           onSaved={handleSlotSaved}
+        />
+      )}
+
+      {showBatch && (
+        <BatchModal
+          studentId={studentId}
+          subject={activeSubject}
+          onClose={() => setShowBatch(false)}
+          onSaved={(msg) => { fetchSlots(); setShowBatch(false); setToast(msg); }}
         />
       )}
 
