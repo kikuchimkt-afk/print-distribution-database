@@ -148,10 +148,13 @@ export default function StudentLP() {
   }
 
   async function handleStudyDone() {
-    if (hwIdsRef.current.length === 0) return;
     setStudyDone(true);
-    const now = new Date().toISOString();
-    await supabase.from('homework').update({ last_viewed_at: now }).in('id', hwIdsRef.current).select();
+    if (hwIdsRef.current.length > 0) {
+      const now = new Date().toISOString();
+      try {
+        await supabase.from('homework').update({ last_viewed_at: now }).in('id', hwIdsRef.current).select();
+      } catch (e) { console.error('Study done error:', e); }
+    }
   }
 
   async function fetchData() {
