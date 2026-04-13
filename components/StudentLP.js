@@ -38,6 +38,20 @@ const STUDENT_HELP = [
     ],
   },
   {
+    id: 's-timer',
+    icon: '⏱',
+    title: '経過時間・勉強終了',
+    content: [
+      { type: 'text', value: 'ページを開くと、ヘッダーに勉強時間のタイマーが表示されます。' },
+      { type: 'steps', items: [
+        '⏱ ページを開くとタイマーが自動スタート',
+        '📖 宿題を確認・PDFを閲覧しながら勉強',
+        '✅ 終わったら「勉強終了」ボタンをタップ',
+      ]},
+      { type: 'tip', value: '「勉強終了」を押すと先生に勉強した時間が伝わります。忘れずにタップしましょう！' },
+    ],
+  },
+  {
     id: 's-pdf',
     icon: '📄',
     title: 'PDFの閲覧・印刷',
@@ -63,6 +77,7 @@ const STUDENT_HELP = [
     ],
   },
 ];
+
 
 export default function StudentLP() {
   const params = useParams();
