@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import SlotModal from '@/components/SlotModal';
 import BatchModal from '@/components/BatchModal';
+import QRCodeModal from '@/components/QRCodeModal';
+import HomeworkManager from '@/components/HomeworkManager';
 import Toast from '@/components/Toast';
 
 const AVATAR_COLORS = ['#2d6a4f','#3a7bd5','#e07a3a','#ad1457','#6a1b9a','#b5651d','#2e7d32','#c62828'];
@@ -20,6 +22,7 @@ export default function StudentClient() {
   const [activeSubject, setActiveSubject] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [showBatch, setShowBatch] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const [fileSearch, setFileSearch] = useState('');
   const [toast, setToast] = useState('');
   const [loading, setLoading] = useState(true);
@@ -122,6 +125,7 @@ export default function StudentClient() {
         <span className="sep">›</span>
         <span>{student.name}</span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <button className="btn btn-secondary btn-sm" onClick={() => setShowQR(true)}>📱 QR</button>
           <button className="btn btn-secondary btn-sm" onClick={handlePrint}>🖨️ 印刷</button>
           <button className="btn btn-secondary btn-sm" onClick={() => setShowBatch(true)}>📋 一括配布</button>
         </div>
@@ -215,6 +219,15 @@ export default function StudentClient() {
             );
           })}
         </div>
+
+        {/* Homework Manager Section */}
+        <div style={{ marginTop: 32, paddingTop: 24, borderTop: '2px solid var(--border-light)' }}>
+          <HomeworkManager
+            studentId={studentId}
+            subjects={student.subjects || []}
+            onToast={setToast}
+          />
+        </div>
       </div>
 
       {selectedSlot !== null && (
@@ -226,6 +239,14 @@ export default function StudentClient() {
           droppedFiles={typeof selectedSlot === 'object' ? selectedSlot.droppedFiles : null}
           onClose={() => setSelectedSlot(null)}
           onSaved={handleSlotSaved}
+        />
+      )}
+
+      {showQR && (
+        <QRCodeModal
+          studentId={studentId}
+          studentName={student.name}
+          onClose={() => setShowQR(false)}
         />
       )}
 

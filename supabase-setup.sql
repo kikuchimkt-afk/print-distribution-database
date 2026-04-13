@@ -68,7 +68,51 @@ CREATE POLICY "Allow public read" ON storage.objects FOR SELECT USING (bucket_id
 CREATE POLICY "Allow public insert" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'prints');
 CREATE POLICY "Allow public delete" ON storage.objects FOR DELETE USING (bucket_id = 'prints');
 
--- 6. 初期データ投入（CSVから）
+-- 6. homework テーブル（宿題）
+CREATE TABLE homework (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id      UUID REFERENCES students(id) ON DELETE CASCADE,
+  subject         TEXT NOT NULL,
+  due_date        DATE NOT NULL,
+  title           TEXT NOT NULL,
+  description     TEXT DEFAULT '',
+  assigned_by     TEXT DEFAULT '',
+  assigned_at     TIMESTAMPTZ DEFAULT now(),
+  first_viewed_at TIMESTAMPTZ,
+  last_viewed_at  TIMESTAMPTZ
+);
+
+-- 7. homework_files テーブル（宿題のファイル）
+CREATE TABLE homework_files (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  homework_id    UUID REFERENCES homework(id) ON DELETE CASCADE,
+  file_path      TEXT NOT NULL,
+  file_name      TEXT NOT NULL,
+  file_size      BIGINT DEFAULT 0,
+  source_file_id UUID REFERENCES files(id) ON DELETE SET NULL,
+  uploaded_at    TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE homework ENABLE ROW LEVEL SECURITY;
+ALTER TABLE homework_files ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all on homework" ON homework FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all on homework_files" ON homework_files FOR ALL USING (true) WITH CHECK (true);
+
+-- 8b. homework_links テーブル（アプリリンク）
+CREATE TABLE homework_links (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  homework_id  UUID REFERENCES homework(id) ON DELETE CASCADE,
+  url          TEXT NOT NULL,
+  title        TEXT NOT NULL,
+  description  TEXT DEFAULT '',
+  icon         TEXT DEFAULT '📱',
+  created_at   TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE homework_links ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all on homework_links" ON homework_links FOR ALL USING (true) WITH CHECK (true);
+
+-- 9. 初期データ投入（CSVから）
 INSERT INTO students (name, grade, subjects) VALUES
   ('中山紗那', '小5', ARRAY['数学','英語']),
   ('伊川朝陽', '中1', ARRAY['数学','英語']),
