@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 
 // ====================================================
 // DEMO DATA — 架空の生徒5名
@@ -340,15 +339,17 @@ export default function DemoClient() {
   return (
     <>
       <nav className="breadcrumb">
-        <Link href="/">生徒一覧</Link>
-        <span className="sep">›</span>
-        <span>デモモード</span>
-        {view === 'detail' && selectedStudent && (
+        <span style={{ cursor: 'pointer' }} onClick={() => { setView('list'); setSelectedStudent(null); }}>デモモード</span>
+        {view !== 'list' && selectedStudent && (
           <>
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-              <button className="btn btn-secondary btn-sm" onClick={showLP}>📱 生徒視点プレビュー</button>
-            </div>
+            <span className="sep">›</span>
+            <span>{selectedStudent.name}</span>
           </>
+        )}
+        {view === 'detail' && selectedStudent && (
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+            <button className="btn btn-secondary btn-sm" onClick={showLP}>📱 生徒視点プレビュー</button>
+          </div>
         )}
       </nav>
 
