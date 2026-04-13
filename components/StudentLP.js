@@ -87,10 +87,17 @@ export default function StudentLP() {
         const unviewed = hwData.filter(h => !h.first_viewed_at).map(h => h.id);
         if (unviewed.length > 0) {
           const now = new Date().toISOString();
-          await supabase.from('homework')
+          console.log('Setting first_viewed_at for', unviewed.length, 'items:', unviewed);
+          const { data: updateData, error: updateErr } = await supabase
+            .from('homework')
             .update({ first_viewed_at: now })
             .in('id', unviewed)
-            .catch(e => console.warn('First view tracking failed:', e));
+            .select();
+          if (updateErr) {
+            console.error('first_viewed_at update FAILED:', updateErr);
+          } else {
+            console.log('first_viewed_at update SUCCESS:', updateData);
+          }
         }
       }
     } catch (e) {
