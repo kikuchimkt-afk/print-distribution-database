@@ -1,5 +1,6 @@
 import './globals.css';
 import Link from 'next/link';
+import { headers } from 'next/headers';
 
 export const metadata = {
   title: 'PrintBase - プリント配布データベース',
@@ -16,20 +17,28 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const headerList = await headers();
+  const pathname = headerList.get('x-pathname') || headerList.get('x-invoke-path') || '';
+  const isLP = pathname.startsWith('/lp');
+
   return (
     <html lang="ja">
       <body>
-        <header className="app-header">
-          <Link href="/" className="app-logo">
-            <div className="logo-icon">P</div>
-            <span>PrintBase</span>
-          </Link>
-        </header>
+        {!isLP && (
+          <header className="app-header">
+            <Link href="/" className="app-logo">
+              <div className="logo-icon">P</div>
+              <span>PrintBase</span>
+            </Link>
+          </header>
+        )}
         {children}
-        <footer className="app-footer">
-          <p>© {new Date().getFullYear()} ECC藍住・北島中央・大学前</p>
-        </footer>
+        {!isLP && (
+          <footer className="app-footer">
+            <p>© {new Date().getFullYear()} ECC藍住・北島中央・大学前</p>
+          </footer>
+        )}
         <div id="toast-container"></div>
       </body>
     </html>
