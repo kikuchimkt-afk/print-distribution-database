@@ -163,6 +163,9 @@ export default function StudentLP() {
     <div className="lp-container">
       {/* Header */}
       <div className="lp-header">
+        <div style={{ textAlign: 'center', marginBottom: 12, position: 'relative', zIndex: 1 }}>
+          <span style={{ fontSize: 11, letterSpacing: 2, opacity: 0.6, textTransform: 'uppercase' }}>🦉 宿題連絡帳</span>
+        </div>
         <div className="lp-header-inner">
           <div className="lp-avatar" style={{ background: color }}>
             {student.name.charAt(0)}
@@ -281,11 +284,7 @@ export default function StudentLP() {
 
       {/* Footer */}
       <div className="lp-footer">
-        <div className="lp-footer-logo">
-          <div className="logo-icon" style={{ width: 20, height: 20, fontSize: 10 }}>P</div>
-          <span>PrintBase</span>
-        </div>
-        <a href="/manual" target="_blank" rel="noopener" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', textDecoration: 'none', marginTop: 6 }}>
+        <a href="/manual" target="_blank" rel="noopener" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
           📖 使い方ガイド
         </a>
         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
