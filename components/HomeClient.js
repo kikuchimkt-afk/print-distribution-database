@@ -135,6 +135,7 @@ export default function HomeClient() {
             </button>
           )}
           <Link href="/dashboard" className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>📊 ダッシボード</Link>
+          <Link href="/manual" className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>📖 マニュアル</Link>
         </div>
       </nav>
 
