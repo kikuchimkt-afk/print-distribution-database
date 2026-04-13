@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 const SUBJECT_CLASS = { '数学': 'math', '英語': 'english', '国語': 'japanese', '理科': 'science', '社会': 'social', '英検': 'eiken' };
-const AVATAR_COLORS = ['#2d6a4f','#3a7bd5','#e07a3a','#ad1457','#6a1b9a','#b5651d','#2e7d32','#c62828'];
 const VIEW_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes
 
 export default function StudentLP() {
@@ -27,26 +26,22 @@ export default function StudentLP() {
     fetchData();
   }, [studentId]);
 
-  // Engagement timer: track active (visible) time and update last_viewed_at after 15 min
+  // Engagement timer
   useEffect(() => {
     function handleVisibility() {
       if (document.hidden) {
-        // Page going hidden — accumulate active time
         activeTimeRef.current += Date.now() - lastActiveRef.current;
       } else {
-        // Page becoming visible — reset checkpoint
         lastActiveRef.current = Date.now();
       }
     }
 
     document.addEventListener('visibilitychange', handleVisibility);
 
-    // Check every 30 seconds if threshold reached
     const interval = setInterval(() => {
       if (viewUpdatedRef.current) return;
       if (hwIdsRef.current.length === 0) return;
 
-      // Accumulate current visible session time
       const currentActive = document.hidden
         ? activeTimeRef.current
         : activeTimeRef.current + (Date.now() - lastActiveRef.current);
@@ -79,7 +74,6 @@ export default function StudentLP() {
       const hwData = homeworkRes.data || [];
       setHomework(hwData);
 
-      // Store IDs for engagement tracking
       hwIdsRef.current = hwData.map(h => h.id);
 
       // Set first_viewed_at immediately for unviewed items
@@ -87,17 +81,12 @@ export default function StudentLP() {
         const unviewed = hwData.filter(h => !h.first_viewed_at).map(h => h.id);
         if (unviewed.length > 0) {
           const now = new Date().toISOString();
-          console.log('Setting first_viewed_at for', unviewed.length, 'items:', unviewed);
-          const { data: updateData, error: updateErr } = await supabase
+          const { error: updateErr } = await supabase
             .from('homework')
             .update({ first_viewed_at: now })
             .in('id', unviewed)
             .select();
-          if (updateErr) {
-            console.error('first_viewed_at update FAILED:', updateErr);
-          } else {
-            console.log('first_viewed_at update SUCCESS:', updateData);
-          }
+          if (updateErr) console.error('first_viewed_at update FAILED:', updateErr);
         }
       }
     } catch (e) {
@@ -116,8 +105,7 @@ export default function StudentLP() {
     const month = d.getMonth() + 1;
     const day = d.getDate();
     const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-    const weekday = weekdays[d.getDay()];
-    return `${month}/${day}（${weekday}）`;
+    return `${month}/${day}（${weekdays[d.getDay()]}）`;
   }
 
   function getDueStatus(dateStr) {
@@ -144,6 +132,7 @@ export default function StudentLP() {
   if (loading) {
     return (
       <div className="lp-container">
+        <div className="lp-forest-bg"></div>
         <div className="lp-loading">
           <div className="spinner"></div>
           <p>読み込み中…</p>
@@ -155,6 +144,7 @@ export default function StudentLP() {
   if (!student) {
     return (
       <div className="lp-container">
+        <div className="lp-forest-bg"></div>
         <div className="lp-error">
           <div className="lp-error-icon">📋</div>
           <h2>ページが見つかりません</h2>
@@ -164,55 +154,54 @@ export default function StudentLP() {
     );
   }
 
-  const color = AVATAR_COLORS[student.name.charCodeAt(0) % AVATAR_COLORS.length];
-
   return (
     <div className="lp-container">
+      {/* Forest background with owl family */}
+      <div className="lp-forest-bg">
+        {/* Trees */}
+        <div className="lp-tree lp-tree-1">🌲</div>
+        <div className="lp-tree lp-tree-2">🌳</div>
+        <div className="lp-tree lp-tree-3">🌲</div>
+        <div className="lp-tree lp-tree-4">🌳</div>
+        <div className="lp-tree lp-tree-5">🌲</div>
+        <div className="lp-tree lp-tree-6">🌳</div>
+        <div className="lp-tree lp-tree-7">🌲</div>
+        <div className="lp-tree lp-tree-8">🌳</div>
+        {/* Owl family */}
+        <div className="lp-owl lp-owl-parent" title="フクロウお母さん">🦉</div>
+        <div className="lp-owl lp-owl-boy" title="フクロウ男の子">🦉</div>
+        <div className="lp-owl lp-owl-girl" title="フクロウ女の子">🦉</div>
+      </div>
+
       {/* Header */}
       <div className="lp-header">
-        <div style={{ textAlign: 'center', marginBottom: 12, position: 'relative', zIndex: 1 }}>
-          <span style={{ fontSize: 11, letterSpacing: 2, opacity: 0.6, textTransform: 'uppercase' }}>🦉 宿題連絡帳</span>
-        </div>
-        <div className="lp-header-inner">
-          <div className="lp-avatar" style={{ background: color }}>
-            {student.name.charAt(0)}
-          </div>
-          <div className="lp-student-info">
-            <h1 className="lp-student-name">{student.name}</h1>
-            <div className="lp-student-meta">
-              {student.grade}
-              <span className="lp-dot">·</span>
-              {(student.subjects || []).map(s => (
-                <span key={s} className={`subject-tag ${SUBJECT_CLASS[s] || ''}`}>{s}</span>
-              ))}
-            </div>
-          </div>
+        <a href="/manual" target="_blank" rel="noopener" className="lp-help-link">📖 使い方</a>
+        <h1 className="lp-main-title">🦉 宿題連絡帳</h1>
+        <div className="lp-student-bar">
+          <span className="lp-student-name-text">{student.name}</span>
+          <span className="lp-student-meta-text">
+            {student.grade}
+            {(student.subjects || []).map(s => (
+              <span key={s} className={`subject-tag ${SUBJECT_CLASS[s] || ''}`}>{s}</span>
+            ))}
+          </span>
         </div>
       </div>
 
       {/* Filter tabs */}
       <div className="lp-tabs">
-        <button
-          className={`lp-tab ${activeFilter === 'upcoming' ? 'active' : ''}`}
-          onClick={() => setActiveFilter('upcoming')}
-        >
+        <button className={`lp-tab ${activeFilter === 'upcoming' ? 'active' : ''}`} onClick={() => setActiveFilter('upcoming')}>
           📌 これから
         </button>
-        <button
-          className={`lp-tab ${activeFilter === 'past' ? 'active' : ''}`}
-          onClick={() => setActiveFilter('past')}
-        >
+        <button className={`lp-tab ${activeFilter === 'past' ? 'active' : ''}`} onClick={() => setActiveFilter('past')}>
           📁 過去
         </button>
-        <button
-          className={`lp-tab ${activeFilter === 'all' ? 'active' : ''}`}
-          onClick={() => setActiveFilter('all')}
-        >
+        <button className={`lp-tab ${activeFilter === 'all' ? 'active' : ''}`} onClick={() => setActiveFilter('all')}>
           すべて
         </button>
       </div>
 
-      {/* Homework list */}
+      {/* Homework list - glass panel */}
       <div className="lp-content">
         {filtered.length === 0 ? (
           <div className="lp-empty">
@@ -249,13 +238,7 @@ export default function StudentLP() {
                   {files.length > 0 && (
                     <div className="lp-file-list">
                       {files.map(file => (
-                        <a
-                          key={file.id}
-                          href={getFileUrl(file.file_path)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="lp-file-item"
-                        >
+                        <a key={file.id} href={getFileUrl(file.file_path)} target="_blank" rel="noopener noreferrer" className="lp-file-item">
                           <span className="lp-file-icon">📄</span>
                           <span className="lp-file-name">{file.file_name}</span>
                           <span className="lp-file-action">開く ›</span>
@@ -268,13 +251,7 @@ export default function StudentLP() {
                   {links.length > 0 && (
                     <div className="lp-file-list" style={{ marginTop: files.length > 0 ? 6 : 0 }}>
                       {links.map(link => (
-                        <a
-                          key={link.id}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="lp-file-item lp-app-link"
-                        >
+                        <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="lp-file-item lp-app-link">
                           <span className="lp-file-icon">{link.icon || '📱'}</span>
                           <span className="lp-file-name">{link.title}</span>
                           <span className="lp-file-action">起動 ›</span>
@@ -289,12 +266,9 @@ export default function StudentLP() {
         )}
       </div>
 
-      {/* Footer */}
+      {/* Footer - copyright only */}
       <div className="lp-footer">
-        <a href="/manual" target="_blank" rel="noopener" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
-          📖 使い方ガイド
-        </a>
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>
           © {new Date().getFullYear()} ECC藍住・北島中央・大学前
         </div>
       </div>
