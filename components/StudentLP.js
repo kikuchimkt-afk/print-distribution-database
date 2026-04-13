@@ -74,15 +74,18 @@ export default function StudentLP() {
   const [activeFilter, setActiveFilter] = useState('upcoming');
   const [showHelp, setShowHelp] = useState(false);
   const [helpSection, setHelpSection] = useState('s-access');
+  const [elapsed, setElapsed] = useState(0);
+  const [studyDone, setStudyDone] = useState(false);
 
   const hwIdsRef = useRef([]);
   const activeTimeRef = useRef(0);
   const lastActiveRef = useRef(Date.now());
   const viewUpdatedRef = useRef(false);
+  const startTimeRef = useRef(Date.now());
 
   useEffect(() => { fetchData(); }, [studentId]);
 
-  // Engagement timer
+  // Visible timer + secret engagement tracking
   useEffect(() => {
     function handleVisibility() {
       if (document.hidden) {
@@ -92,7 +95,20 @@ export default function StudentLP() {
       }
     }
     document.addEventListener('visibilitychange', handleVisibility);
-    const interval = setInterval(() => {
+
+    // Update visible timer every second
+    const timerInterval = setInterval(() => {
+      if (!studyDone) {
+        const now = Date.now();
+        const active = document.hidden
+          ? activeTimeRef.current
+          : activeTimeRef.current + (now - lastActiveRef.current);
+        setElapsed(Math.floor(active / 1000));
+      }
+    }, 1000);
+
+    // Secret 15-min auto-tracking (backup)
+    const trackInterval = setInterval(() => {
       if (viewUpdatedRef.current || hwIdsRef.current.length === 0) return;
       const currentActive = document.hidden
         ? activeTimeRef.current
@@ -103,8 +119,26 @@ export default function StudentLP() {
         supabase.from('homework').update({ last_viewed_at: now }).in('id', hwIdsRef.current);
       }
     }, 30000);
-    return () => { document.removeEventListener('visibilitychange', handleVisibility); clearInterval(interval); };
-  }, []);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      clearInterval(timerInterval);
+      clearInterval(trackInterval);
+    };
+  }, [studyDone]);
+
+  function formatElapsed(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  async function handleStudyDone() {
+    if (hwIdsRef.current.length === 0) return;
+    setStudyDone(true);
+    const now = new Date().toISOString();
+    await supabase.from('homework').update({ last_viewed_at: now }).in('id', hwIdsRef.current).select();
+  }
 
   async function fetchData() {
     setLoading(true);
@@ -202,7 +236,17 @@ export default function StudentLP() {
 
       {/* Header */}
       <div className="lp-header">
-        <button className="lp-help-link" onClick={() => setShowHelp(true)}>📖 使い方</button>
+        <div className="lp-header-top-row">
+          <button className="lp-help-link" onClick={() => setShowHelp(true)}>📖 使い方</button>
+          <div className="lp-study-timer">
+            <span className="lp-timer-display">⏱ {formatElapsed(elapsed)}</span>
+            {!studyDone ? (
+              <button className="lp-study-done-btn" onClick={handleStudyDone}>✅ 勉強終了</button>
+            ) : (
+              <span className="lp-study-done-label">おつかれさま！🎉</span>
+            )}
+          </div>
+        </div>
         <h1 className="lp-main-title">🦉 宿題連絡帳</h1>
         <div className="lp-student-bar">
           <span className="lp-student-name-text">{student.name}</span>
