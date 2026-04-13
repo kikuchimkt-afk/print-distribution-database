@@ -1226,3 +1226,97 @@ body {
   color: var(--warning);
 }
 
+/* ==========================================================
+   BATCH HOMEWORK
+   ========================================================== */
+
+.batch-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.batch-toolbar-left,
+.batch-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.batch-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Selection mode cards */
+.student-card.selectable {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s;
+}
+
+.student-card.selectable:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.student-card.selected {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.select-checkbox {
+  font-size: 18px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+/* Batch modal student chips */
+.batch-students-summary {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+}
+
+.batch-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.batch-student-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.batch-student-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.batch-student-grade {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
