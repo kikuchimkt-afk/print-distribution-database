@@ -19,13 +19,16 @@ export default function HomeworkModal({ studentId, subjects, existingHomework, o
   const [selectedFileIds, setSelectedFileIds] = useState(new Set());
   const [loadingSlots, setLoadingSlots] = useState(true);
 
+  // Existing direct files (uploaded files without source_file_id, preserved on edit)
+  const [existingDirectFiles, setExistingDirectFiles] = useState([]);
+
   // New file upload (SECONDARY)  
   const [pendingFiles, setPendingFiles] = useState([]);
   const [activeTab, setActiveTab] = useState('slots');
   const fileInputRef = useRef(null);
 
   // App links
-  const [appLinks, setAppLinks] = useState(existingHomework?.homework_links || []);
+  const [appLinks, setAppLinks] = useState([]);
   const [newLinkUrl, setNewLinkUrl] = useState('');
   const [newLinkTitle, setNewLinkTitle] = useState('');
 
@@ -34,6 +37,18 @@ export default function HomeworkModal({ studentId, subjects, existingHomework, o
     d.setDate(d.getDate() + 1);
     return d.toISOString().slice(0, 10);
   }
+
+  // Initialize app links from existing homework
+  useEffect(() => {
+    if (existingHomework?.homework_links && existingHomework.homework_links.length > 0) {
+      setAppLinks(existingHomework.homework_links.map(l => ({
+        url: l.url,
+        title: l.title,
+        description: l.description || '',
+        icon: l.icon || '📱',
+      })));
+    }
+  }, [existingHomework]);
 
   // Fetch existing slot files for this student
   useEffect(() => {
@@ -60,13 +75,22 @@ export default function HomeworkModal({ studentId, subjects, existingHomework, o
       }
       setSlotFiles(allFiles);
 
-      // Pre-select files if editing
+      // Pre-select files and separate direct uploads if editing
       if (existingHomework?.homework_files) {
         const preSelected = new Set();
+        const directFiles = [];
+
         for (const hf of existingHomework.homework_files) {
-          if (hf.source_file_id) preSelected.add(hf.source_file_id);
+          if (hf.source_file_id) {
+            // File from a slot — pre-check in slot picker
+            preSelected.add(hf.source_file_id);
+          } else {
+            // Directly uploaded file — preserve separately
+            directFiles.push(hf);
+          }
         }
         setSelectedFileIds(preSelected);
+        setExistingDirectFiles(directFiles);
       }
 
       setLoadingSlots(false);
@@ -93,6 +117,10 @@ export default function HomeworkModal({ studentId, subjects, existingHomework, o
     setPendingFiles(prev => prev.filter((_, i) => i !== idx));
   }
 
+  function removeExistingDirect(idx) {
+    setExistingDirectFiles(prev => prev.filter((_, i) => i !== idx));
+  }
+
   function formatSize(bytes) {
     if (!bytes) return '';
     if (bytes < 1024) return bytes + 'B';
@@ -105,9 +133,8 @@ export default function HomeworkModal({ studentId, subjects, existingHomework, o
     const url = newLinkUrl.trim();
     const linkTitle = newLinkTitle.trim() || url;
     if (!url) return;
-    // Auto-add https if missing
     const fullUrl = url.startsWith('http') ? url : 'https://' + url;
-    setAppLinks(prev => [...prev, { url: fullUrl, title: linkTitle, icon: '📱', _new: true }]);
+    setAppLinks(prev => [...prev, { url: fullUrl, title: linkTitle, description: '', icon: '📱' }]);
     setNewLinkUrl('');
     setNewLinkTitle('');
   }
@@ -127,8 +154,8 @@ export default function HomeworkModal({ studentId, subjects, existingHomework, o
     filesBySubject[f.slotSubject].push(f);
   });
 
-  const totalSelected = selectedFileIds.size + pendingFiles.length;
-  const hasContent = totalSelected > 0 || appLinks.length > 0;
+  const totalFiles = selectedFileIds.size + existingDirectFiles.length + pendingFiles.length;
+  const hasContent = totalFiles > 0 || appLinks.length > 0;
 
   async function handleSave() {
     if (!title.trim()) return;
@@ -143,7 +170,7 @@ export default function HomeworkModal({ studentId, subjects, existingHomework, o
           .from('homework')
           .update({ subject, due_date: dueDate, title: title.trim(), description: description.trim() })
           .eq('id', homeworkId);
-        // Delete old files and links
+        // Delete old files and links — will re-insert all below
         await supabase.from('homework_files').delete().eq('homework_id', homeworkId);
         await supabase.from('homework_links').delete().eq('homework_id', homeworkId);
       } else {
@@ -163,10 +190,10 @@ export default function HomeworkModal({ studentId, subjects, existingHomework, o
         homeworkId = newHw.id;
       }
 
-      // Insert selected slot files
+      // 1. Insert selected slot files
       const selectedFiles = slotFiles.filter(f => selectedFileIds.has(f.id));
       if (selectedFiles.length > 0) {
-        await supabase.from('homework_files').insert(
+        const { error: slotErr } = await supabase.from('homework_files').insert(
           selectedFiles.map(f => ({
             homework_id: homeworkId,
             file_path: f.file_path,
@@ -175,9 +202,24 @@ export default function HomeworkModal({ studentId, subjects, existingHomework, o
             source_file_id: f.id,
           }))
         );
+        if (slotErr) throw slotErr;
       }
 
-      // Upload new files
+      // 2. Re-insert existing direct files (preserved from previous edit)
+      if (existingDirectFiles.length > 0) {
+        const { error: directErr } = await supabase.from('homework_files').insert(
+          existingDirectFiles.map(f => ({
+            homework_id: homeworkId,
+            file_path: f.file_path,
+            file_name: f.file_name,
+            file_size: f.file_size,
+            source_file_id: null,
+          }))
+        );
+        if (directErr) throw directErr;
+      }
+
+      // 3. Upload new files
       for (const file of pendingFiles) {
         const timestamp = Date.now();
         const ext = file.name.includes('.') ? '.' + file.name.split('.').pop() : '';
@@ -187,18 +229,19 @@ export default function HomeworkModal({ studentId, subjects, existingHomework, o
         const { error: uploadErr } = await supabase.storage.from('prints').upload(filePath, file);
         if (uploadErr) throw uploadErr;
 
-        await supabase.from('homework_files').insert({
+        const { error: fileErr } = await supabase.from('homework_files').insert({
           homework_id: homeworkId,
           file_path: filePath,
           file_name: file.name,
           file_size: file.size,
           source_file_id: null,
         });
+        if (fileErr) throw fileErr;
       }
 
-      // Insert app links
+      // 4. Insert app links
       if (appLinks.length > 0) {
-        await supabase.from('homework_links').insert(
+        const { error: linkErr } = await supabase.from('homework_links').insert(
           appLinks.map(link => ({
             homework_id: homeworkId,
             url: link.url,
@@ -207,12 +250,13 @@ export default function HomeworkModal({ studentId, subjects, existingHomework, o
             icon: link.icon || '📱',
           }))
         );
+        if (linkErr) throw linkErr;
       }
 
       onSaved(isEditing ? '宿題を更新しました' : '宿題を追加しました');
     } catch (err) {
-      console.error(err);
-      alert('保存に失敗しました: ' + err.message);
+      console.error('Save error:', err);
+      alert('保存に失敗しました: ' + (err.message || JSON.stringify(err)));
     } finally {
       setSaving(false);
     }
@@ -331,6 +375,23 @@ export default function HomeworkModal({ studentId, subjects, existingHomework, o
               </div>
             ) : activeTab === 'upload' ? (
               <div>
+                {/* Show existing direct files if editing */}
+                {existingDirectFiles.length > 0 && (
+                  <div className="file-list" style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>登録済みファイル</div>
+                    {existingDirectFiles.map((file, i) => (
+                      <div key={file.id || i} className="file-item">
+                        <div className="file-icon">📄</div>
+                        <div className="file-details">
+                          <div className="file-name">{file.file_name}</div>
+                          <div className="file-meta">{formatSize(file.file_size)}</div>
+                        </div>
+                        <button className="btn btn-ghost btn-sm" onClick={() => removeExistingDirect(i)} title="削除">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div
                   className="drop-zone"
                   style={{ padding: '20px 16px' }}
@@ -419,7 +480,7 @@ export default function HomeworkModal({ studentId, subjects, existingHomework, o
           {/* Selection summary */}
           {hasContent && (
             <div style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 500, display: 'flex', gap: 12 }}>
-              {totalSelected > 0 && <span>📄 {totalSelected}ファイル</span>}
+              {totalFiles > 0 && <span>📄 {totalFiles}ファイル</span>}
               {appLinks.length > 0 && <span>📱 {appLinks.length}アプリ</span>}
             </div>
           )}
