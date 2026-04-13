@@ -1527,3 +1527,18 @@ body {
   .manual-content-body { padding: 16px; }
 }
 
+/* ==========================================================
+   FOOTER
+   ========================================================== */
+
+.app-footer {
+  text-align: center;
+  padding: 24px 16px;
+  margin-top: 40px;
+  border-top: 1px solid var(--border-light);
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.app-footer p { margin: 0; }
+

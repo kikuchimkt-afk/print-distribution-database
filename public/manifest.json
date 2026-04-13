@@ -1,0 +1,17 @@
+{
+  "name": "PrintBase",
+  "short_name": "PrintBase",
+  "description": "プリント配布データベース - ECC藍住・北島中央・大学前",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2d6a4f",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
