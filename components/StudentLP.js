@@ -285,6 +285,12 @@ export default function StudentLP() {
           <div className="logo-icon" style={{ width: 20, height: 20, fontSize: 10 }}>P</div>
           <span>PrintBase</span>
         </div>
+        <a href="/manual" target="_blank" rel="noopener" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', textDecoration: 'none', marginTop: 6 }}>
+          📖 使い方ガイド
+        </a>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
+          © {new Date().getFullYear()} ECC藍住・北島中央・大学前
+        </div>
       </div>
     </div>
   );
